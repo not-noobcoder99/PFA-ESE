@@ -1,0 +1,52 @@
+Heart Disease Dataset – EDA Summary
+============================================================
+
+Dataset Shape: 303 rows × 14 columns
+Features: 13
+Target Variable: 'target' (0 = Low Risk, 1 = High Risk)
+
+Missing Values: 0
+
+Target Distribution:
+  Low Risk  (0): 138
+  High Risk (1): 165
+  Balance Ratio: 0.84
+
+Summary Statistics:
+          count        mean        std    min    25%    50%    75%    max  range
+age       303.0   54.366337   9.082101   29.0   47.5   55.0   61.0   77.0   48.0
+sex       303.0    0.683168   0.466011    0.0    0.0    1.0    1.0    1.0    1.0
+cp        303.0    0.966997   1.032052    0.0    0.0    1.0    2.0    3.0    3.0
+trestbps  303.0  131.623762  17.538143   94.0  120.0  130.0  140.0  200.0  106.0
+chol      303.0  246.264026  51.830751  126.0  211.0  240.0  274.5  564.0  438.0
+fbs       303.0    0.148515   0.356198    0.0    0.0    0.0    0.0    1.0    1.0
+restecg   303.0    0.528053   0.525860    0.0    0.0    1.0    1.0    2.0    2.0
+thalach   303.0  149.646865  22.905161   71.0  133.5  153.0  166.0  202.0  131.0
+exang     303.0    0.326733   0.469794    0.0    0.0    0.0    1.0    1.0    1.0
+oldpeak   303.0    1.039604   1.161075    0.0    0.0    0.8    1.6    6.2    6.2
+slope     303.0    1.399340   0.616226    0.0    1.0    1.0    2.0    2.0    2.0
+ca        303.0    0.729373   1.022606    0.0    0.0    0.0    1.0    4.0    4.0
+thal      303.0    2.313531   0.612277    0.0    2.0    2.0    3.0    3.0    3.0
+target    303.0    0.544554   0.498835    0.0    0.0    1.0    1.0    1.0    1.0
+
+Correlations with Target:
+  cp           → +0.434
+  thalach      → +0.422
+  slope        → +0.346
+  restecg      → +0.137
+  fbs          → -0.028
+  chol         → -0.085
+  trestbps     → -0.145
+  age          → -0.225
+  sex          → -0.281
+  thal         → -0.344
+  ca           → -0.392
+  oldpeak      → -0.431
+  exang        → -0.437
+
+Key Observations:
+  - Features vary significantly in scale → StandardScaler required
+  - No missing values → No imputation needed
+  - Classes moderately balanced → No resampling needed
+  - cp, thalach, slope positively correlated with heart disease risk
+  - exang, oldpeak, ca, thal negatively correlated with heart disease risk

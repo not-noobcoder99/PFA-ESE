@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# Generated outputs (created at runtime by train_compare.py)
+outputs/*.joblib
+outputs/*.json
+outputs/*.txt
+
+# Test cache
+.pytest_cache/

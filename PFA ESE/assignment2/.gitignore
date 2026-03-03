@@ -1,0 +1,10 @@
+# Generated model artifacts
+outputs/*.joblib
+outputs/evaluation_results.json
+outputs/model_comparison.txt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

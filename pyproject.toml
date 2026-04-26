@@ -1,0 +1,10 @@
+[project]
+name = "heart-disease-semester-project"
+version = "1.0.0"
+description = "Unified semester project: baseline ML, model comparison, and serving API"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"

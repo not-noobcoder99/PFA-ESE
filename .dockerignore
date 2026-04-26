@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.git/
+.github/
+assignment3/.venv/
+PFA ESE/.venv/
+PFA ESE/assignment1/outputs/
+PFA ESE/assignment2/outputs/
+assignment3/tests/__pycache__/
+assignment3/src/__pycache__/
+assignment3/outputs/api/api.log
+outputs/api/api.log
+*.log

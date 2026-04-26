@@ -1,0 +1,25 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Local outputs/logs
+outputs/api/api.log
+*.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/

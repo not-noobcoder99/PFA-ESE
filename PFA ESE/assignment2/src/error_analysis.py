@@ -3,10 +3,136 @@ error_analysis.py
 -----------------
 Analyses model errors by identifying false positives and false negatives,
 and comparing their mean feature values against correctly classified samples.
+
+Classes
+-------
+ErrorAnalyser
+    Object-oriented interface for analysing model errors on validation data.
 """
 
 import numpy as np
 import pandas as pd
+
+
+class ErrorAnalyser:
+    """
+    Analyses model errors by identifying false positives and false negatives,
+    and comparing their mean feature values against correctly classified samples.
+
+    Parameters
+    ----------
+    pipeline : sklearn.pipeline.Pipeline
+        A fitted sklearn pipeline used to generate predictions.
+    feature_names : list of str
+        Names of features corresponding to the columns of the validation data.
+
+    Attributes
+    ----------
+    pipeline : sklearn.pipeline.Pipeline
+        The fitted pipeline passed at construction.
+    feature_names : list of str
+        Feature names used when labelling mean-value dictionaries.
+    _result : dict or None
+        Cached result dictionary from the most recent call to :meth:`analyse`.
+        ``None`` until :meth:`analyse` has been called.
+
+    Examples
+    --------
+    >>> analyser = ErrorAnalyser(pipeline, feature_names)
+    >>> result = analyser.analyse(X_val, y_val)
+    >>> print(analyser.summary())
+    >>> print(analyser.top_features("fp"))
+    """
+
+    def __init__(self, pipeline, feature_names):
+        self.pipeline = pipeline
+        self.feature_names = feature_names
+        self._result = None
+
+    def analyse(self, X_val, y_val):
+        """
+        Run error analysis on validation data and cache the result.
+
+        Identifies false positives and false negatives, computes mean feature
+        values for each error group and for correct predictions, and ranks
+        features by their discriminating power between groups.
+
+        Parameters
+        ----------
+        X_val : pd.DataFrame or np.ndarray
+            Validation feature matrix.
+        y_val : pd.Series or np.ndarray
+            True validation labels.
+
+        Returns
+        -------
+        result : dict
+            Dictionary with keys: ``n_false_positives``, ``n_false_negatives``,
+            ``n_correct``, ``fp_feature_means``, ``fn_feature_means``,
+            ``correct_feature_means``, ``fp_top_differentiating_features``,
+            ``fn_top_differentiating_features``.
+        """
+        self._result = analyse_errors(self.pipeline, X_val, y_val, self.feature_names)
+        return self._result
+
+    def summary(self):
+        """
+        Return a concise counts summary of the last analysis run.
+
+        Returns
+        -------
+        summary : dict
+            Dictionary with ``n_false_positives``, ``n_false_negatives``,
+            and ``n_correct``.
+
+        Raises
+        ------
+        RuntimeError
+            If :meth:`analyse` has not been called yet.
+        """
+        if self._result is None:
+            raise RuntimeError("Call analyse() before summary().")
+        return {
+            "n_false_positives": self._result["n_false_positives"],
+            "n_false_negatives": self._result["n_false_negatives"],
+            "n_correct": self._result["n_correct"],
+        }
+
+    def top_features(self, error_type="fp", n=5):
+        """
+        Return the top *n* features that most differentiate an error group
+        from correctly classified samples.
+
+        Parameters
+        ----------
+        error_type : {"fp", "fn"}, optional
+            ``"fp"`` for false positives, ``"fn"`` for false negatives.
+            Defaults to ``"fp"``.
+        n : int, optional
+            Number of top features to return. Defaults to 5.
+
+        Returns
+        -------
+        features : list of (str, float) tuples
+            Each tuple is ``(feature_name, absolute_mean_difference)``,
+            sorted descending by absolute difference.
+
+        Raises
+        ------
+        RuntimeError
+            If :meth:`analyse` has not been called yet.
+        ValueError
+            If ``error_type`` is not ``"fp"`` or ``"fn"``.
+        """
+        if self._result is None:
+            raise RuntimeError("Call analyse() before top_features().")
+        if error_type == "fp":
+            key = "fp_top_differentiating_features"
+        elif error_type == "fn":
+            key = "fn_top_differentiating_features"
+        else:
+            raise ValueError(f"error_type must be 'fp' or 'fn', got {error_type!r}")
+        return self._result[key][:n]
 
 
 def analyse_errors(pipeline, X_val, y_val, feature_names):

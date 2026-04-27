@@ -12,6 +12,11 @@ This script:
 5. Evaluates on validation set
 6. Applies confidence-aware prediction logic
 7. Saves metrics to outputs/
+
+Classes
+-------
+RiskScreeningPipeline
+    Confidence-aware heart disease risk screening pipeline.
 """
 
 import sys
@@ -35,6 +40,159 @@ from split import split_data
 # Configuration
 # ──────────────────────────────────────────────
 CONFIDENCE_THRESHOLD = 0.70  # Predictions below this are deferred
+
+
+class RiskScreeningPipeline:
+    """
+    Confidence-aware heart disease risk screening pipeline.
+
+    Wraps an sklearn Pipeline (preprocessor + classifier) with
+    confidence-threshold logic: predictions whose max class probability
+    falls below ``threshold`` are *deferred* rather than accepted.
+
+    Parameters
+    ----------
+    preprocessor : sklearn transformer
+        Fitted-ready preprocessing transformer (e.g. ColumnTransformer).
+    model : sklearn estimator
+        Unfitted classifier that supports ``predict_proba``.
+    threshold : float, optional
+        Confidence threshold in [0, 1]. Predictions below this value are
+        marked as "Deferred". Defaults to ``CONFIDENCE_THRESHOLD`` (0.70).
+
+    Attributes
+    ----------
+    pipeline : sklearn.pipeline.Pipeline
+        The internal sklearn pipeline (set after construction).
+    threshold : float
+        Confidence threshold used during prediction.
+
+    Examples
+    --------
+    >>> screener = RiskScreeningPipeline(preprocessor, model)
+    >>> screener.fit(X_train, y_train)
+    >>> results = screener.predict(X_val)
+    """
+
+    def __init__(self, preprocessor, model, threshold=CONFIDENCE_THRESHOLD):
+        self.pipeline = Pipeline([
+            ("preprocessing", preprocessor),
+            ("model", model),
+        ])
+        self.threshold = threshold
+
+    def fit(self, X_train, y_train):
+        """
+        Fit the preprocessing + model pipeline on training data.
+
+        Parameters
+        ----------
+        X_train : pd.DataFrame
+            Training feature matrix.
+        y_train : pd.Series
+            Training labels.
+
+        Returns
+        -------
+        self : RiskScreeningPipeline
+        """
+        self.pipeline.fit(X_train, y_train)
+        return self
+
+    def predict(self, X):
+        """
+        Make confidence-aware predictions.
+
+        Each sample is either *Accepted* (confidence >= threshold) or
+        *Deferred* (confidence < threshold, further evaluation recommended).
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Feature matrix for prediction.
+
+        Returns
+        -------
+        results : list of dict
+            Each dict contains ``sample_index``, ``risk``, ``confidence``,
+            ``decision``, and an optional ``note`` for deferred samples.
+        """
+        return confidence_aware_predict(self.pipeline, X, self.threshold)
+
+    def predict_standard(self, X):
+        """
+        Return standard (non-confidence-aware) class predictions.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Feature matrix for prediction.
+
+        Returns
+        -------
+        y_pred : np.ndarray
+            Predicted class labels.
+        """
+        return self.pipeline.predict(X)
+
+    def predict_proba(self, X):
+        """
+        Return class probability estimates.
+
+        Parameters
+        ----------
+        X : pd.DataFrame
+            Feature matrix for prediction.
+
+        Returns
+        -------
+        proba : np.ndarray of shape (n_samples, n_classes)
+            Class probability estimates.
+        """
+        return self.pipeline.predict_proba(X)
+
+    def save_metrics(self, metrics_path, acc, report, cm, results):
+        """
+        Save evaluation metrics to a text file.
+
+        Parameters
+        ----------
+        metrics_path : str
+            Destination file path for the metrics report.
+        acc : float
+            Validation accuracy.
+        report : str
+            Classification report string.
+        cm : np.ndarray
+            Confusion matrix.
+        results : list of dict
+            Confidence-aware prediction results.
+        """
+        accepted = [r for r in results if r["decision"] == "Accepted"]
+        deferred = [r for r in results if r["decision"] == "Deferred"]
+        accepted_acc = None
+
+        accepted_indices = [r["sample_index"] for r in accepted]
+        if accepted_indices:
+            preds = self.pipeline.predict(pd.DataFrame())  # placeholder
+            # Recompute for reporting only
+            pass
+
+        os.makedirs(os.path.dirname(metrics_path), exist_ok=True)
+        with open(metrics_path, "w") as f:
+            f.write("Heart Disease Risk Screening – Baseline Metrics (Assignment 1)\n")
+            f.write("=" * 60 + "\n\n")
+            f.write(f"Model: Logistic Regression\n")
+            f.write(f"Confidence Threshold: {self.threshold}\n\n")
+            f.write(f"Validation Accuracy: {acc:.4f}\n\n")
+            f.write(f"Classification Report:\n{report}\n")
+            f.write(f"Confusion Matrix:\n{cm}\n\n")
+            f.write(f"Total Predictions:    {len(results)}\n")
+            f.write(f"Accepted Predictions: {len(accepted)}\n")
+            f.write(f"Deferred Predictions: {len(deferred)}\n")
+            f.write(f"Deferral Rate:        {len(deferred) / len(results) * 100:.1f}%\n")
+
+        print(f"[Done] Metrics saved to: {metrics_path}")
 
 
 def confidence_aware_predict(pipeline, X, threshold=CONFIDENCE_THRESHOLD):

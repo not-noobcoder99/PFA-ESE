@@ -3,6 +3,11 @@ evaluate.py
 -----------
 Evaluates a trained sklearn pipeline on validation data.
 Computes a comprehensive set of metrics appropriate for medical screening tasks.
+
+Classes
+-------
+ModelEvaluator
+    Object-oriented interface for evaluating a trained sklearn pipeline.
 """
 
 import numpy as np
@@ -16,6 +21,82 @@ from sklearn.metrics import (
     matthews_corrcoef,
     classification_report,
 )
+
+
+class ModelEvaluator:
+    """
+    Evaluates a trained sklearn pipeline with a comprehensive set of metrics
+    appropriate for medical screening tasks.
+
+    Parameters
+    ----------
+    pipeline : sklearn.pipeline.Pipeline
+        A fitted sklearn pipeline with preprocessing and model steps.
+    model_name : str
+        Human-readable name of the model, used in printed reports.
+
+    Attributes
+    ----------
+    pipeline : sklearn.pipeline.Pipeline
+        The fitted pipeline passed at construction.
+    model_name : str
+        Display name of the model.
+    _metrics : dict or None
+        Cached metrics dictionary from the most recent call to :meth:`evaluate`.
+        ``None`` until :meth:`evaluate` has been called.
+
+    Examples
+    --------
+    >>> evaluator = ModelEvaluator(pipeline, "LogisticRegression")
+    >>> metrics = evaluator.evaluate(X_val, y_val)
+    >>> print(evaluator.metrics["roc_auc"])
+    """
+
+    def __init__(self, pipeline, model_name):
+        self.pipeline = pipeline
+        self.model_name = model_name
+        self._metrics = None
+
+    def evaluate(self, X_val, y_val):
+        """
+        Evaluate the pipeline on validation data and cache the result.
+
+        Computes accuracy, precision, recall, F1 (macro and per-class),
+        ROC-AUC, confusion matrix, and Matthews Correlation Coefficient.
+        Prints a formatted report and returns all metrics as a dictionary.
+
+        Parameters
+        ----------
+        X_val : pd.DataFrame
+            Validation feature matrix.
+        y_val : pd.Series
+            True validation labels.
+
+        Returns
+        -------
+        metrics : dict
+            Dictionary containing all computed metrics:
+            ``accuracy``, ``precision_macro``, ``recall_macro``, ``f1_macro``,
+            ``roc_auc``, ``mcc``, ``precision_class0``, ``precision_class1``,
+            ``recall_class0``, ``recall_class1``, ``f1_class0``, ``f1_class1``,
+            ``confusion_matrix`` (nested list for JSON serialisation).
+        """
+        self._metrics = evaluate_model(self.pipeline, X_val, y_val, self.model_name)
+        return self._metrics
+
+    @property
+    def metrics(self):
+        """
+        Return the cached metrics from the most recent :meth:`evaluate` call.
+
+        Raises
+        ------
+        RuntimeError
+            If :meth:`evaluate` has not been called yet.
+        """
+        if self._metrics is None:
+            raise RuntimeError("Call evaluate() before accessing metrics.")
+        return self._metrics
 
 
 def evaluate_model(pipeline, X_val, y_val, model_name):

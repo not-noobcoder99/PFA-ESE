@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Generated outputs
+outputs/*.txt
+outputs/*.joblib
+outputs/*.json
+
+# Test cache
+.pytest_cache/
